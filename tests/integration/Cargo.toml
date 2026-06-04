@@ -1,0 +1,12 @@
+[package]
+name = "integration-tests"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+soroban-sdk.workspace = true
+bdc-token = { path = "../../contracts/bdc-token" }
+mrv-oracle = { path = "../../contracts/mrv-oracle" }
+approval-gov = { path = "../../contracts/approval-gov" }
+retirement = { path = "../../contracts/retirement" }
+marketplace = { path = "../../contracts/marketplace" }
