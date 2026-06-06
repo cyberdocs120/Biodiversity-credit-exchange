@@ -2,8 +2,10 @@
 mod storage;
 mod types;
 mod errors;
+#[cfg(test)]
+mod test;
 
-use soroban_sdk::{contract, contractimpl, panic_with_error, Address, Bytes, Env};
+use soroban_sdk::{contract, contractimpl, panic_with_error, symbol_short, Address, Bytes, Env};
 use storage::*;
 use types::*;
 use errors::BdcTokenError;
@@ -86,15 +88,96 @@ impl BdcTokenContract {
         env.storage().instance().remove(&authorized_burner_key());
     }
 
-    pub fn mint(_env: Env, _to: Address, _metadata: BdcMetadata) -> u64 {
-        panic!("not implemented")
+    pub fn mint(env: Env, to: Address, params: MintParams) -> u64 {
+        env.current_contract_address().require_auth();
+
+        let token_id = read_token_id_counter(&env) + 1;
+        write_token_id_counter(&env, token_id);
+
+        let metadata = BdcMetadata {
+            token_id,
+            polygon_id: params.polygon_id.clone(),
+            methodology_id: params.methodology_id,
+            survey_ipfs_cid: params.survey_ipfs_cid.clone(),
+            baseline_bsi: params.baseline_bsi,
+            current_bsi: params.current_bsi,
+            area_ha_contribution: params.area_ha_contribution,
+            biome: params.biome,
+            vintage_year: params.vintage_year,
+            vintage_quarter: params.vintage_quarter,
+            approval_governance_id: params.approval_governance_id,
+            state: BdcState::Active,
+            retired_at: None,
+            retirement_receipt: None,
+        };
+
+        let token = BdcTokenValue {
+            owner: to.clone(),
+            metadata,
+        };
+
+        write_token(&env, token_id, &token);
+        write_owner_count(&env, &to, read_owner_count(&env, &to) + 1);
+        write_total_supply(&env, read_total_supply(&env) + 1);
+        write_polygon_token_count(&env, &params.polygon_id, read_polygon_token_count(&env, &params.polygon_id) + 1);
+
+        env.events().publish(
+            (symbol_short!("bdc"), symbol_short!("mint")),
+            (token_id, params.polygon_id, params.survey_ipfs_cid, 1u64),
+        );
+
+        token_id
     }
 
-    pub fn transfer(_env: Env, _from: Address, _to: Address, _token_id: u64) {
-        panic!("not implemented")
+    pub fn transfer(env: Env, from: Address, to: Address, token_id: u64) {
+        from.require_auth();
+
+        if !has_token(&env, token_id) {
+            panic_with_error!(&env, BdcTokenError::TokenNotFound);
+        }
+
+        let mut token = read_token(&env, token_id).unwrap();
+        if token.owner != from {
+            panic_with_error!(&env, BdcTokenError::Unauthorized);
+        }
+        if token.metadata.state != BdcState::Active {
+            panic_with_error!(&env, BdcTokenError::BdcAlreadyRetired);
+        }
+
+        token.owner = to.clone();
+        write_token(&env, token_id, &token);
+
+        write_owner_count(&env, &from, read_owner_count(&env, &from) - 1);
+        write_owner_count(&env, &to, read_owner_count(&env, &to) + 1);
+
+        env.events().publish(
+            (symbol_short!("bdc"), symbol_short!("xfer")),
+            (token_id, from, to),
+        );
     }
 
-    pub fn burn(_env: Env, _token_id: u64) {
-        panic!("not implemented")
+    pub fn burn(env: Env, caller: Address, token_id: u64) {
+        caller.require_auth();
+
+        if !has_token(&env, token_id) {
+            panic_with_error!(&env, BdcTokenError::TokenNotFound);
+        }
+
+        let mut token = read_token(&env, token_id).unwrap();
+        if token.metadata.state != BdcState::Active {
+            panic_with_error!(&env, BdcTokenError::BdcAlreadyRetired);
+        }
+
+        token.metadata.state = BdcState::Retired;
+        token.metadata.retired_at = Some(env.ledger().timestamp());
+        write_token(&env, token_id, &token);
+
+        write_owner_count(&env, &token.owner, read_owner_count(&env, &token.owner) - 1);
+        write_total_supply(&env, read_total_supply(&env) - 1);
+
+        env.events().publish(
+            (symbol_short!("bdc"), symbol_short!("burn")),
+            (token_id, caller),
+        );
     }
 }
