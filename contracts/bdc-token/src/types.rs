@@ -53,3 +53,18 @@ pub struct BdcTokenValue {
     pub owner: Address,
     pub metadata: BdcMetadata,
 }
+
+#[derive(Clone, Debug)]
+#[contracttype]
+pub struct MintParams {
+    pub polygon_id: BytesN<32>,
+    pub methodology_id: BytesN<8>,
+    pub survey_ipfs_cid: Bytes,
+    pub baseline_bsi: u32,
+    pub current_bsi: u32,
+    pub area_ha_contribution: u64,
+    pub biome: Biome,
+    pub vintage_year: u32,
+    pub vintage_quarter: u32,
+    pub approval_governance_id: BytesN<32>,
+}
