@@ -5,7 +5,7 @@ mod errors;
 #[cfg(test)]
 mod test;
 
-use soroban_sdk::{contract, contractimpl, panic_with_error, symbol_short, Address, Bytes, Env};
+use soroban_sdk::{contract, contractimpl, panic_with_error, symbol_short, Address, Bytes, BytesN, Env, Vec};
 use storage::*;
 use types::*;
 use errors::BdcTokenError;
@@ -53,7 +53,8 @@ impl BdcTokenContract {
         if !has_token(&env, token_id) {
             panic_with_error!(&env, BdcTokenError::TokenNotFound);
         }
-        Bytes::new(&env)
+        let token = read_token(&env, token_id).unwrap();
+        token.metadata.metadata_uri
     }
 
     pub fn token_metadata(env: Env, token_id: u64) -> BdcMetadata {
@@ -106,6 +107,7 @@ impl BdcTokenContract {
             vintage_year: params.vintage_year,
             vintage_quarter: params.vintage_quarter,
             approval_governance_id: params.approval_governance_id,
+            metadata_uri: Bytes::new(&env),
             state: BdcState::Active,
             retired_at: None,
             retirement_receipt: None,
@@ -179,5 +181,66 @@ impl BdcTokenContract {
             (symbol_short!("bdc"), symbol_short!("burn")),
             (token_id, caller),
         );
+    }
+
+    pub fn set_metadata_uri(env: Env, token_id: u64, new_uri: Bytes) {
+        let admin = read_admin(&env);
+        admin.require_auth();
+
+        if !has_token(&env, token_id) {
+            panic_with_error!(&env, BdcTokenError::TokenNotFound);
+        }
+
+        let mut token = read_token(&env, token_id).unwrap();
+        token.metadata.metadata_uri = new_uri;
+        write_token(&env, token_id, &token);
+    }
+
+    pub fn tokens_by_owner(env: Env, owner: Address, start: u64, limit: u64) -> Vec<u64> {
+        let counter = read_token_id_counter(&env);
+        let mut result: Vec<u64> = Vec::new(&env);
+        let mut skipped: u64 = 0;
+
+        for token_id in 1..=counter {
+            if !has_token(&env, token_id) {
+                continue;
+            }
+            let token = read_token(&env, token_id).unwrap();
+            if token.owner == owner && token.metadata.state == BdcState::Active {
+                if skipped < start {
+                    skipped += 1;
+                } else if u64::from(result.len()) < limit {
+                    result.push_back(token_id);
+                } else {
+                    break;
+                }
+            }
+        }
+
+        result
+    }
+
+    pub fn tokens_by_polygon(env: Env, polygon_id: BytesN<32>, start: u64, limit: u64) -> Vec<u64> {
+        let counter = read_token_id_counter(&env);
+        let mut result: Vec<u64> = Vec::new(&env);
+        let mut skipped: u64 = 0;
+
+        for token_id in 1..=counter {
+            if !has_token(&env, token_id) {
+                continue;
+            }
+            let token = read_token(&env, token_id).unwrap();
+            if token.metadata.polygon_id == polygon_id && token.metadata.state == BdcState::Active {
+                if skipped < start {
+                    skipped += 1;
+                } else if u64::from(result.len()) < limit {
+                    result.push_back(token_id);
+                } else {
+                    break;
+                }
+            }
+        }
+
+        result
     }
 }

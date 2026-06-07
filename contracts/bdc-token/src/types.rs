@@ -42,6 +42,7 @@ pub struct BdcMetadata {
     pub vintage_year: u32,
     pub vintage_quarter: u32,
     pub approval_governance_id: BytesN<32>,
+    pub metadata_uri: Bytes,
     pub state: BdcState,
     pub retired_at: Option<u64>,
     pub retirement_receipt: Option<BytesN<32>>,
