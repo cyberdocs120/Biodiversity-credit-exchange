@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Bytes, BytesN, Vec};
+use soroban_sdk::{contracttype, Address, Bytes, BytesN, Vec};
 
 #[derive(Clone, Debug, PartialEq)]
 #[contracttype]
@@ -62,4 +62,22 @@ pub struct SurveyRecord {
     pub resolved: bool,
     pub token_ids: Vec<u64>,
     pub analyses_hashes: Vec<BytesN<32>>,
+}
+
+#[derive(Clone, Debug)]
+#[contracttype]
+pub struct SurveyData {
+    pub polygon_id: BytesN<32>,
+    pub ipfs_cid: Bytes,
+    pub survey_timestamp: u64,
+    pub signatures: Vec<(BytesN<32>, BytesN<64>)>,
+    pub analyses_hashes: Vec<BytesN<32>>,
+    pub baseline_bsi: u32,
+    pub current_bsi: u32,
+    pub area_contribution: u64,
+    pub biome: u32,
+    pub vintage_year: u32,
+    pub vintage_qtr: u32,
+    pub methodology_id: BytesN<8>,
+    pub beneficiary: Address,
 }

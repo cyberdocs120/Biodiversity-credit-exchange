@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use soroban_sdk::{Address, Bytes, BytesN, Env, Symbol, symbol_short};
 
 use crate::types::{OracleNode, HabitatPolygon, SurveyRecord};
@@ -24,6 +25,10 @@ pub fn oracle_count_key() -> Symbol {
 
 pub fn bdc_token_key() -> Symbol {
     symbol_short!("RecT")
+}
+
+pub fn approval_gov_key() -> Symbol {
+    symbol_short!("Gov")
 }
 
 // Admin
@@ -80,6 +85,19 @@ pub fn read_bdc_token(env: &Env) -> Address {
 
 pub fn has_bdc_token(env: &Env) -> bool {
     env.storage().instance().has(&bdc_token_key())
+}
+
+// Approval Gov Address
+pub fn write_approval_gov(env: &Env, addr: &Address) {
+    env.storage().instance().set(&approval_gov_key(), addr);
+}
+
+pub fn read_approval_gov(env: &Env) -> Address {
+    env.storage().instance().get(&approval_gov_key()).unwrap()
+}
+
+pub fn has_approval_gov(env: &Env) -> bool {
+    env.storage().instance().has(&approval_gov_key())
 }
 
 // Oracle storage keys (prefix 0x10 + pubkey)
