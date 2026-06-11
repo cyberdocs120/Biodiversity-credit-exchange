@@ -42,19 +42,112 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
                 },
                 {
-                  "bytes": "0101010101010101010101010101010101010101010101010101010101010101"
-                },
-                {
-                  "bytes": "0202020202020202020202020202020202020202020202020202020202020202"
-                },
-                {
-                  "bytes": "0303030303030303"
-                },
-                {
-                  "u64": 500
-                },
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  "map": [
+                    {
+                      "key": {
+                        "symbol": "approval_governance_id"
+                      },
+                      "val": {
+                        "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "area_ha_contribution"
+                      },
+                      "val": {
+                        "u64": 4500
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "baseline_bsi"
+                      },
+                      "val": {
+                        "u32": 100
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "beneficiary"
+                      },
+                      "val": {
+                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "biome"
+                      },
+                      "val": {
+                        "u32": 0
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "credit_qty"
+                      },
+                      "val": {
+                        "u64": 500
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "current_bsi"
+                      },
+                      "val": {
+                        "u32": 200
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "methodology_id"
+                      },
+                      "val": {
+                        "bytes": "0303030303030303"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "polygon_id"
+                      },
+                      "val": {
+                        "bytes": "0101010101010101010101010101010101010101010101010101010101010101"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "survey_hash"
+                      },
+                      "val": {
+                        "bytes": "0202020202020202020202020202020202020202020202020202020202020202"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "survey_ipfs_cid"
+                      },
+                      "val": {
+                        "bytes": "516d54657374313233"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "vintage_quarter"
+                      },
+                      "val": {
+                        "u32": 2
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "vintage_year"
+                      },
+                      "val": {
+                        "u32": 2025
+                      }
+                    }
+                  ]
                 }
               ]
             }
@@ -166,10 +259,42 @@
                   "map": [
                     {
                       "key": {
+                        "symbol": "approval_governance_id"
+                      },
+                      "val": {
+                        "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "area_ha_contribution"
+                      },
+                      "val": {
+                        "u64": 4500
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "baseline_bsi"
+                      },
+                      "val": {
+                        "u32": 100
+                      }
+                    },
+                    {
+                      "key": {
                         "symbol": "beneficiary"
                       },
                       "val": {
                         "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "biome"
+                      },
+                      "val": {
+                        "u32": 0
                       }
                     },
                     {
@@ -194,6 +319,14 @@
                       },
                       "val": {
                         "u64": 500
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "current_bsi"
+                      },
+                      "val": {
+                        "u32": 200
                       }
                     },
                     {
@@ -242,6 +375,30 @@
                       },
                       "val": {
                         "bytes": "0202020202020202020202020202020202020202020202020202020202020202"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "survey_ipfs_cid"
+                      },
+                      "val": {
+                        "bytes": "516d54657374313233"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "vintage_quarter"
+                      },
+                      "val": {
+                        "u32": 2
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "vintage_year"
+                      },
+                      "val": {
+                        "u32": 2025
                       }
                     },
                     {
