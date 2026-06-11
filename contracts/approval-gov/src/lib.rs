@@ -9,8 +9,9 @@ mod types;
 mod test;
 
 pub use crate::errors::ApprovalError;
-pub use crate::types::{Proposal, ProposalState, Stakeholder, StakeholderRole, Vote};
+pub use crate::types::{Biome, MintParams, Proposal, ProposalState, ProposeParams, Stakeholder, StakeholderRole, Vote};
 use crate::storage::*;
+use crate::types::Stakeholder as StakeholderType;
 
 #[contract]
 pub struct ApprovalGovContract;
@@ -67,7 +68,7 @@ impl ApprovalGovContract {
         }
 
         let role_clone = role.clone();
-        let stakeholder = Stakeholder {
+        let stakeholder = StakeholderType {
             addr: addr.clone(),
             role,
             weight,
@@ -130,17 +131,7 @@ impl ApprovalGovContract {
         read_voting_period(&env)
     }
 
-    // --- Stubs for Day 8 ---
-
-    pub fn propose(
-        env: Env,
-        proposer: Address,
-        polygon_id: BytesN<32>,
-        survey_hash: BytesN<32>,
-        methodology_id: BytesN<8>,
-        credit_qty: u64,
-        beneficiary: Address,
-    ) -> u64 {
+    pub fn propose(env: Env, proposer: Address, params: ProposeParams) -> u64 {
         proposer.require_auth();
         let counter = read_proposal_counter(&env) + 1;
         write_proposal_counter(&env, counter);
@@ -150,11 +141,11 @@ impl ApprovalGovContract {
 
         let proposal = Proposal {
             proposal_id: counter,
-            polygon_id,
-            survey_hash,
-            methodology_id,
-            credit_qty,
-            beneficiary,
+            polygon_id: params.polygon_id,
+            survey_hash: params.survey_hash,
+            methodology_id: params.methodology_id,
+            credit_qty: params.credit_qty,
+            beneficiary: params.beneficiary,
             proposer,
             created_at: now,
             voting_deadline: now + period,
@@ -163,6 +154,14 @@ impl ApprovalGovContract {
             community_veto: false,
             weighted_total_approve: 0,
             weighted_total_reject: 0,
+            survey_ipfs_cid: params.survey_ipfs_cid,
+            baseline_bsi: params.baseline_bsi,
+            current_bsi: params.current_bsi,
+            area_ha_contribution: params.area_ha_contribution,
+            biome: params.biome,
+            vintage_year: params.vintage_year,
+            vintage_quarter: params.vintage_quarter,
+            approval_governance_id: params.approval_governance_id,
         };
 
         write_proposal(&env, counter, &proposal);
@@ -198,7 +197,6 @@ impl ApprovalGovContract {
             panic_with_error!(&env, ApprovalError::VoterNotStakeholder);
         }
 
-        // Check not already voted
         for i in 0..proposal.votes.len() {
             let v = proposal.votes.get(i).unwrap();
             if v.voter == voter {
@@ -226,6 +224,8 @@ impl ApprovalGovContract {
             (symbol_short!("gov"), symbol_short!("vote")),
             (proposal_id, voter, approve, stakeholder.weight),
         );
+
+        Self::check_and_transition(&env, &mut proposal);
 
         write_proposal(&env, proposal_id, &proposal);
     }
@@ -269,14 +269,7 @@ impl ApprovalGovContract {
             panic_with_error!(&env, ApprovalError::ProposalNotVoting);
         }
 
-        if has_bdc_token(&env) {
-            let bdc_id = read_bdc_token(&env);
-            let _: () = env.invoke_contract(
-                &bdc_id,
-                &symbol_short!("mint"),
-                (proposal.beneficiary,).into_val(&env),
-            );
-        }
+        Self::mint_credits(&env, &proposal);
 
         env.events().publish(
             (symbol_short!("gov"), symbol_short!("appr")),
@@ -301,16 +294,10 @@ impl ApprovalGovContract {
             panic_with_error!(&env, ApprovalError::Unauthorized);
         }
 
-        let min = read_min_threshold(&env);
-        if proposal.community_veto {
+        Self::check_and_transition(&env, &mut proposal);
+
+        if proposal.state == ProposalState::Voting {
             proposal.state = ProposalState::Rejected;
-        } else if proposal.weighted_total_approve >= min {
-            proposal.state = ProposalState::Approved;
-        } else if proposal.weighted_total_reject >= min {
-            proposal.state = ProposalState::Rejected;
-        } else {
-            // Still voting - cannot close
-            panic_with_error!(&env, ApprovalError::ThresholdNotMet);
         }
 
         write_proposal(&env, proposal_id, &proposal);
@@ -332,5 +319,57 @@ impl ApprovalGovContract {
         read_proposal(&env, proposal_id).unwrap_or_else(|| {
             panic_with_error!(&env, ApprovalError::ProposalNotFound);
         })
+    }
+}
+
+impl ApprovalGovContract {
+    fn check_and_transition(env: &Env, proposal: &mut Proposal) {
+        if proposal.community_veto {
+            proposal.state = ProposalState::Rejected;
+            return;
+        }
+
+        let min = read_min_threshold(env);
+        if proposal.weighted_total_approve >= min {
+            proposal.state = ProposalState::Approved;
+            Self::mint_credits(env, proposal);
+        } else if proposal.weighted_total_reject >= min {
+            proposal.state = ProposalState::Rejected;
+        }
+    }
+
+    fn mint_credits(env: &Env, proposal: &Proposal) {
+        if !has_bdc_token(env) {
+            return;
+        }
+
+        let bdc_id = read_bdc_token(env);
+
+        for _ in 0..proposal.credit_qty {
+            let _: () = env.invoke_contract(
+                &bdc_id,
+                &symbol_short!("mint"),
+                (proposal.beneficiary.clone(), MintParams {
+                    polygon_id: proposal.polygon_id.clone(),
+                    methodology_id: proposal.methodology_id.clone(),
+                    survey_ipfs_cid: proposal.survey_ipfs_cid.clone(),
+                    baseline_bsi: proposal.baseline_bsi,
+                    current_bsi: proposal.current_bsi,
+                    area_ha_contribution: proposal.area_ha_contribution,
+                    biome: match proposal.biome {
+                        0 => Biome::TropicalForest,
+                        1 => Biome::TemperateForest,
+                        2 => Biome::Grassland,
+                        3 => Biome::Wetland,
+                        4 => Biome::Mangrove,
+                        5 => Biome::CoralReef,
+                        _ => Biome::Other,
+                    },
+                    vintage_year: proposal.vintage_year,
+                    vintage_quarter: proposal.vintage_quarter,
+                    approval_governance_id: proposal.approval_governance_id.clone(),
+                }).into_val(env),
+            );
+        }
     }
 }
