@@ -1,6 +1,6 @@
 #![no_std]
 mod storage;
-mod types;
+pub mod types;
 mod errors;
 #[cfg(test)]
 mod test;
