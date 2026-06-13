@@ -176,3 +176,79 @@ fn test_admin_management() {
     client.transfer_admin(&new_admin);
     assert_eq!(client.admin(), new_admin);
 }
+
+#[test]
+fn test_merkle_root_deterministic() {
+    let (env, _admin, retire_client, bdc_client, retirer) = setup();
+    let token_ids = mint_tokens(&env, &bdc_client, &retirer, 4);
+    let polygon_id = BytesN::from_array(&env, &[1u8; 32]);
+    let claim = sample_claim_data(&env);
+
+    let receipt_id = retire_client.retire(&retirer, &token_ids, &polygon_id, &claim);
+    let receipt = retire_client.get_receipt(&receipt_id);
+    
+    // With 4 tokens, we should have a non-zero root
+    assert_ne!(receipt.merkle_root, BytesN::from_array(&env, &[0u8; 32]));
+    
+    // Redoing it should yield same root
+    let root2 = merkle::compute_root(&env, &token_ids);
+    assert_eq!(receipt.merkle_root, root2);
+}
+
+#[test]
+fn test_merkle_proof_verify() {
+    let env = Env::default();
+    let mut token_ids: Vec<u64> = Vec::new(&env);
+    token_ids.push_back(1);
+    token_ids.push_back(2);
+    token_ids.push_back(3);
+    token_ids.push_back(4);
+    token_ids.push_back(5);
+    
+    let root = merkle::compute_root(&env, &token_ids);
+    
+    for i in 0..5 {
+        let proof = merkle::generate_proof(&env, &token_ids, i);
+        let id = token_ids.get(i).unwrap();
+        let leaf = env.crypto().sha256(&Bytes::from_slice(&env, &id.to_be_bytes())).into();
+        assert!(merkle::verify(&env, &root, &proof, &leaf, i));
+    }
+}
+
+#[test]
+fn test_prove_claim_returns_data() {
+    let (env, _admin, retire_client, bdc_client, retirer) = setup();
+    let token_ids = mint_tokens(&env, &bdc_client, &retirer, 2);
+    let polygon_id = BytesN::from_array(&env, &[1u8; 32]);
+    let claim = sample_claim_data(&env);
+
+    env.ledger().set_timestamp(5000);
+    retire_client.retire(&retirer, &token_ids, &polygon_id, &claim);
+
+    let (root, proof, index) = retire_client.prove_claim(&retirer, &polygon_id, &2024001, &2024365, &0);
+    
+    assert_ne!(root, BytesN::from_array(&env, &[0u8; 32]));
+    assert_eq!(index, 0);
+    assert!(proof.len() > 0);
+}
+
+#[test]
+fn test_point_in_polygon_simple() {
+    let (env, _admin, retire_client, _, _) = setup();
+    
+    // Square: (0,0), (0,10), (10,10), (10,0)
+    let mut poly = Vec::new(&env);
+    poly.push_back(Point { lat: 0, lon: 0 });
+    poly.push_back(Point { lat: 0, lon: 10 });
+    poly.push_back(Point { lat: 10, lon: 10 });
+    poly.push_back(Point { lat: 10, lon: 0 });
+    
+    // Inside
+    let p_in = Point { lat: 5, lon: 5 };
+    assert!(retire_client.prove_polygon_containment(&p_in, &poly));
+    
+    // Outside
+    let p_out = Point { lat: 15, lon: 15 };
+    assert!(!retire_client.prove_polygon_containment(&p_out, &poly));
+}
+

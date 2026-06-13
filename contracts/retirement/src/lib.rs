@@ -2,6 +2,8 @@
 use soroban_sdk::{contract, contractimpl, panic_with_error, symbol_short, xdr::ToXdr, Address, Bytes, BytesN, Env, IntoVal, Vec};
 
 mod errors;
+mod geometry;
+mod merkle;
 mod storage;
 mod types;
 
@@ -9,7 +11,7 @@ mod types;
 mod test;
 
 pub use crate::errors::RetirementError;
-pub use crate::types::{ClaimData, RetirementReceipt};
+pub use crate::types::{ClaimData, Point, RetirementReceipt};
 use crate::storage::*;
 
 #[contract]
@@ -79,7 +81,7 @@ impl RetirementContract {
 
         let total_credits = token_ids.len() as u64;
 
-        let merkle_root = compute_root(&env, &token_ids);
+        let merkle_root = merkle::compute_root(&env, &token_ids);
         let receipt_id = compute_receipt_id(&env, &polygon_id, &retirer, timestamp, &token_ids);
 
         let receipt = RetirementReceipt {
@@ -148,16 +150,37 @@ impl RetirementContract {
         }
         false
     }
-}
 
-fn compute_root(env: &Env, token_ids: &Vec<u64>) -> BytesN<32> {
-    let mut hash_input = Bytes::new(env);
-    for i in 0..token_ids.len() {
-        let id = token_ids.get(i).unwrap();
-        let id_bytes = id.to_be_bytes();
-        hash_input.append(&Bytes::from_slice(env, &id_bytes));
+    pub fn prove_claim(
+        env: Env,
+        retirer: Address,
+        polygon_id: BytesN<32>,
+        period_start: u64,
+        period_end: u64,
+        token_index: u32,
+    ) -> (BytesN<32>, Vec<BytesN<32>>, u32) {
+        let receipt_ids = read_claim_index(&env, &polygon_id, &retirer);
+        for i in 0..receipt_ids.len() {
+            let rid = receipt_ids.get(i).unwrap();
+            if let Some(receipt) = read_receipt(&env, &rid) {
+                if receipt.claim_period_start == period_start
+                    && receipt.claim_period_end == period_end
+                {
+                    let proof = merkle::generate_proof(&env, &receipt.token_ids, token_index);
+                    return (receipt.merkle_root, proof, token_index);
+                }
+            }
+        }
+        panic_with_error!(&env, RetirementError::ReceiptNotFound);
     }
-    env.crypto().sha256(&hash_input).into()
+
+    pub fn prove_polygon_containment(
+        _env: Env,
+        point: Point,
+        polygon: Vec<Point>,
+    ) -> bool {
+        geometry::point_in_polygon(point, polygon)
+    }
 }
 
 fn compute_receipt_id(
@@ -184,3 +207,4 @@ fn compute_receipt_id(
 
     env.crypto().sha256(&hash_input).into()
 }
+

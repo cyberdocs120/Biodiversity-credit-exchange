@@ -2,6 +2,13 @@ use soroban_sdk::{contracttype, Address, Bytes, BytesN, Vec};
 
 #[derive(Clone, Debug)]
 #[contracttype]
+pub struct Point {
+    pub lat: i64,
+    pub lon: i64,
+}
+
+#[derive(Clone, Debug)]
+#[contracttype]
 pub struct ClaimData {
     pub period_start: u64,
     pub period_end: u64,
