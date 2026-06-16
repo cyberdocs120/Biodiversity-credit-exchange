@@ -12,12 +12,15 @@ fn setup() -> (Env, Address, RetirementContractClient<'static>, BdcTokenContract
     let admin = Address::generate(&env);
     let retirer = Address::generate(&env);
 
-    let bdc_id = env.register(BdcTokenContract, (&admin,));
+    let bdc_id = env.register(BdcTokenContract, ());
     let bdc_client = BdcTokenContractClient::new(&env, &bdc_id);
+    bdc_client.initialize(&admin);
 
-    let retire_id = env.register(RetirementContract, (&admin,));
+    let retire_id = env.register(RetirementContract, ());
     let retire_client = RetirementContractClient::new(&env, &retire_id);
+    retire_client.initialize(&admin);
 
+    bdc_client.authorize_minter(&admin);
     bdc_client.authorize_burner(&retire_id);
     retire_client.set_bdc_token(&bdc_id);
 
@@ -35,7 +38,7 @@ fn mint_tokens(env: &Env, client: &BdcTokenContractClient, to: &Address, count: 
         biome: Biome::TropicalForest,
         vintage_year: 2025,
         vintage_quarter: 2,
-        approval_governance_id: BytesN::from_array(env, &[3u8; 32]),
+        approval_governance_id: Address::generate(env),
     };
 
     let mut ids: Vec<u64> = Vec::new(env);
@@ -168,8 +171,9 @@ fn test_admin_management() {
     let admin = Address::generate(&env);
     let new_admin = Address::generate(&env);
 
-    let contract_id = env.register(RetirementContract, (&admin,));
+    let contract_id = env.register(RetirementContract, ());
     let client = RetirementContractClient::new(&env, &contract_id);
+    client.initialize(&admin);
 
     assert_eq!(client.admin(), admin);
 

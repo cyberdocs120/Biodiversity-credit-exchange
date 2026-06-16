@@ -19,7 +19,7 @@ pub struct RetirementContract;
 
 #[contractimpl]
 impl RetirementContract {
-    pub fn __constructor(env: Env, admin: Address) {
+    pub fn initialize(env: Env, admin: Address) {
         admin.require_auth();
         write_admin(&env, &admin);
         write_receipt_counter(&env, 0);
