@@ -13,7 +13,7 @@ pub fn write_admin(env: &Env, addr: &Address) {
 }
 
 pub fn read_admin(env: &Env) -> Address {
-    env.storage().instance().get(&admin_key()).unwrap()
+    env.storage().instance().get(&admin_key()).expect("marketplace: Admin not set")
 }
 
 pub fn write_fee_rate(env: &Env, rate: u32) {
@@ -37,7 +37,7 @@ pub fn write_bdc_token(env: &Env, addr: &Address) {
 }
 
 pub fn read_bdc_token(env: &Env) -> Address {
-    env.storage().instance().get(&bdc_token_key()).unwrap()
+    env.storage().instance().get(&bdc_token_key()).expect("marketplace: BDC token not set")
 }
 
 pub fn write_usdc_token(env: &Env, addr: &Address) {
@@ -45,7 +45,7 @@ pub fn write_usdc_token(env: &Env, addr: &Address) {
 }
 
 pub fn read_usdc_token(env: &Env) -> Address {
-    env.storage().instance().get(&usdc_token_key()).unwrap()
+    env.storage().instance().get(&usdc_token_key()).expect("marketplace: USDC token not set")
 }
 
 pub fn write_fee_vault(env: &Env, addr: &Address) {
@@ -53,7 +53,7 @@ pub fn write_fee_vault(env: &Env, addr: &Address) {
 }
 
 pub fn read_fee_vault(env: &Env) -> Address {
-    env.storage().instance().get(&fee_vault_key()).unwrap()
+    env.storage().instance().get(&fee_vault_key()).expect("marketplace: Fee vault not set")
 }
 
 pub fn order_key(id: u64) -> (Symbol, u64) {
