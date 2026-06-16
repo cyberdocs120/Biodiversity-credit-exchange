@@ -1,5 +1,5 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, panic_with_error, symbol_short, Address, BytesN, Env, IntoVal, Vec};
+use soroban_sdk::{contract, contractimpl, panic_with_error, symbol_short, Address, BytesN, Env, IntoVal, Val, Vec};
 
 mod errors;
 mod storage;
@@ -18,7 +18,7 @@ pub struct ApprovalGovContract;
 
 #[contractimpl]
 impl ApprovalGovContract {
-    pub fn __constructor(env: Env, admin: Address, min_weight: u32, voting_period_secs: u64) {
+    pub fn initialize(env: Env, admin: Address, min_weight: u32, voting_period_secs: u64) {
         admin.require_auth();
         write_admin(&env, &admin);
         write_min_threshold(&env, min_weight);
@@ -346,7 +346,7 @@ impl ApprovalGovContract {
         let bdc_id = read_bdc_token(env);
 
         for _ in 0..proposal.credit_qty {
-            let _: () = env.invoke_contract(
+            let _: Val = env.invoke_contract(
                 &bdc_id,
                 &symbol_short!("mint"),
                 (proposal.beneficiary.clone(), MintParams {

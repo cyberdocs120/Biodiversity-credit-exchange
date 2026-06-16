@@ -24,7 +24,7 @@ pub struct MintParams {
     pub biome: Biome,
     pub vintage_year: u32,
     pub vintage_quarter: u32,
-    pub approval_governance_id: BytesN<32>,
+    pub approval_governance_id: Address,
 }
 
 #[derive(Clone, Debug)]
@@ -42,7 +42,7 @@ pub struct ProposeParams {
     pub biome: u32,
     pub vintage_year: u32,
     pub vintage_quarter: u32,
-    pub approval_governance_id: BytesN<32>,
+    pub approval_governance_id: Address,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -111,5 +111,5 @@ pub struct Proposal {
     pub biome: u32,
     pub vintage_year: u32,
     pub vintage_quarter: u32,
-    pub approval_governance_id: BytesN<32>,
+    pub approval_governance_id: Address,
 }
