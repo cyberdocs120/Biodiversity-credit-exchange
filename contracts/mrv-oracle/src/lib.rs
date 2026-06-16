@@ -1,5 +1,5 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, symbol_short, Address, Bytes, BytesN, Env, Vec, panic_with_error, IntoVal};
+use soroban_sdk::{contract, contractimpl, symbol_short, Address, Bytes, BytesN, Env, Vec, panic_with_error, IntoVal, Symbol};
 
 mod errors;
 mod storage;
@@ -9,7 +9,7 @@ mod types;
 mod test;
 
 pub use crate::errors::MrvOracleError;
-pub use crate::types::{OracleNode, OracleType, HabitatPolygon, SurveyRecord, BoundingBox, SurveyData};
+pub use crate::types::{OracleNode, OracleType, HabitatPolygon, SurveyRecord, BoundingBox, SurveyData, ProposeParams};
 use crate::storage::*;
 
 #[contract]
@@ -17,7 +17,7 @@ pub struct MrvOracleContract;
 
 #[contractimpl]
 impl MrvOracleContract {
-    pub fn __constructor(env: Env, admin: Address) {
+    pub fn initialize(env: Env, admin: Address) {
         write_admin(&env, &admin);
         write_paused(&env, false);
         write_threshold(&env, 1, 1);
@@ -179,6 +179,8 @@ impl MrvOracleContract {
         env: Env,
         data: SurveyData,
     ) -> BytesN<32> {
+        data.beneficiary.require_auth();
+
         if read_paused(&env) {
             panic_with_error!(&env, MrvOracleError::ContractPaused);
         }
@@ -236,7 +238,7 @@ impl MrvOracleContract {
         write_survey(&env, &survey_hash, &survey);
 
         // Update polygon
-        polygon.last_survey_cid = Some(data.ipfs_cid);
+        polygon.last_survey_cid = Some(data.ipfs_cid.clone());
         polygon.last_survey_timestamp = Some(data.survey_timestamp);
         write_polygon(&env, &data.polygon_id, &polygon);
 
@@ -251,10 +253,25 @@ impl MrvOracleContract {
 
         if has_approval_gov(&env) {
             let gov_id = read_approval_gov(&env);
+            let params = ProposeParams {
+                polygon_id: data.polygon_id,
+                survey_hash: survey_hash.clone(),
+                methodology_id: data.methodology_id,
+                credit_qty,
+                beneficiary: data.beneficiary.clone(),
+                survey_ipfs_cid: data.ipfs_cid,
+                baseline_bsi: data.baseline_bsi,
+                current_bsi: data.current_bsi,
+                area_ha_contribution: data.area_contribution,
+                biome: data.biome,
+                vintage_year: data.vintage_year,
+                vintage_quarter: data.vintage_qtr,
+                approval_governance_id: gov_id.clone(),
+            };
             let _proposal_id: u64 = env.invoke_contract(
                 &gov_id,
-                &symbol_short!("prop"),
-                (data.polygon_id, survey_hash.clone(), data.methodology_id, credit_qty, data.beneficiary).into_val(&env),
+                &Symbol::new(&env, "propose"),
+                (data.beneficiary, params).into_val(&env),
             );
         }
 

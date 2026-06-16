@@ -81,3 +81,21 @@ pub struct SurveyData {
     pub methodology_id: BytesN<8>,
     pub beneficiary: Address,
 }
+
+#[derive(Clone, Debug)]
+#[contracttype]
+pub struct ProposeParams {
+    pub polygon_id: BytesN<32>,
+    pub survey_hash: BytesN<32>,
+    pub methodology_id: BytesN<8>,
+    pub credit_qty: u64,
+    pub beneficiary: Address,
+    pub survey_ipfs_cid: Bytes,
+    pub baseline_bsi: u32,
+    pub current_bsi: u32,
+    pub area_ha_contribution: u64,
+    pub biome: u32,
+    pub vintage_year: u32,
+    pub vintage_quarter: u32,
+    pub approval_governance_id: Address,
+}
