@@ -1,14 +1,19 @@
 #![no_std]
 
 #[cfg(test)]
+#[allow(clippy::byte_char_slices)]
 mod test {
-    use soroban_sdk::{testutils::Address as _, Address, Env, BytesN, Bytes, vec};
+    use soroban_sdk::{testutils::Address as _, vec, Address, Bytes, BytesN, Env};
 
-    use bdc_token::{BdcTokenContract, BdcTokenContractClient};
-    use mrv_oracle::{MrvOracleContract, MrvOracleContractClient, OracleType, BoundingBox, SurveyData};
     use approval_gov::{ApprovalGovContract, ApprovalGovContractClient, StakeholderRole};
-    use retirement::{RetirementContract, RetirementContractClient, ClaimData};
-    use marketplace::{MarketplaceContract, MarketplaceContractClient, OrderSide, OrderRestriction};
+    use bdc_token::{BdcTokenContract, BdcTokenContractClient};
+    use marketplace::{
+        MarketplaceContract, MarketplaceContractClient, OrderRestriction, OrderSide,
+    };
+    use mrv_oracle::{
+        BoundingBox, MrvOracleContract, MrvOracleContractClient, OracleType, SurveyData,
+    };
+    use retirement::{ClaimData, RetirementContract, RetirementContractClient};
 
     #[soroban_sdk::contract]
     pub struct MockUsdc;
@@ -22,9 +27,21 @@ mod test {
         let o1 = BytesN::from_array(env, &[1u8; 32]);
         let o2 = BytesN::from_array(env, &[2u8; 32]);
         let o3 = BytesN::from_array(env, &[3u8; 32]);
-        mrv_client.register_oracle(&o1, &Bytes::from_slice(env, b"ipfs://o1"), &OracleType::EdnaLab);
-        mrv_client.register_oracle(&o2, &Bytes::from_slice(env, b"ipfs://o2"), &OracleType::SatelliteImagery);
-        mrv_client.register_oracle(&o3, &Bytes::from_slice(env, b"ipfs://o3"), &OracleType::FieldSurvey);
+        mrv_client.register_oracle(
+            &o1,
+            &Bytes::from_slice(env, b"ipfs://o1"),
+            &OracleType::EdnaLab,
+        );
+        mrv_client.register_oracle(
+            &o2,
+            &Bytes::from_slice(env, b"ipfs://o2"),
+            &OracleType::SatelliteImagery,
+        );
+        mrv_client.register_oracle(
+            &o3,
+            &Bytes::from_slice(env, b"ipfs://o3"),
+            &OracleType::FieldSurvey,
+        );
         mrv_client.set_threshold(&2, &3);
         (o1, o2)
     }
@@ -34,28 +51,48 @@ mod test {
         mrv_client.register_polygon(
             &pid,
             &Bytes::from_slice(env, b"ipfs://poly1"),
-            &BoundingBox { min_lat: 0, max_lat: 10, min_lon: 0, max_lon: 10 },
-            &1000, &0,
+            &BoundingBox {
+                min_lat: 0,
+                max_lat: 10,
+                min_lon: 0,
+                max_lon: 10,
+            },
+            &1000,
+            &0,
             &BytesN::from_array(env, &[b'B', b'R']),
             &BytesN::from_array(env, &[1u8; 32]),
         );
         pid
     }
 
-    fn setup_stakeholders(env: &Env, gov_client: &ApprovalGovContractClient,
-                          e: &Address, c: &Address, a: &Address) {
+    fn setup_stakeholders(
+        _env: &Env,
+        gov_client: &ApprovalGovContractClient,
+        e: &Address,
+        c: &Address,
+        a: &Address,
+    ) {
         gov_client.register_stakeholder(e, &StakeholderRole::LeadEcologist, &3, &false);
         gov_client.register_stakeholder(c, &StakeholderRole::LocalCommunityRep, &2, &true);
         gov_client.register_stakeholder(a, &StakeholderRole::IndependentAuditor, &1, &false);
     }
 
-    fn do_survey(env: &Env, mrv_client: &MrvOracleContractClient,
-                 pid: &BytesN<32>, beneficiary: &Address,
-                 o1: &BytesN<32>, o2: &BytesN<32>) {
+    fn do_survey(
+        env: &Env,
+        mrv_client: &MrvOracleContractClient,
+        pid: &BytesN<32>,
+        beneficiary: &Address,
+        o1: &BytesN<32>,
+        o2: &BytesN<32>,
+    ) {
         let sig1 = BytesN::from_array(env, &[0u8; 64]);
         let sig2 = BytesN::from_array(env, &[0u8; 64]);
         let signatures = vec![env, (o1.clone(), sig1), (o2.clone(), sig2)];
-        let analyses = vec![env, BytesN::from_array(env, &[0u8; 32]), BytesN::from_array(env, &[0u8; 32])];
+        let analyses = vec![
+            env,
+            BytesN::from_array(env, &[0u8; 32]),
+            BytesN::from_array(env, &[0u8; 32]),
+        ];
         mrv_client.submit_survey(&SurveyData {
             polygon_id: pid.clone(),
             ipfs_cid: Bytes::from_slice(env, b"ipfs://survey1"),
@@ -116,8 +153,18 @@ mod test {
         do_survey(&env, &mrv_client, &polygon_id, &project_dev, &o1, &o2);
 
         let pid = 1u64;
-        gov_client.vote(&ecologist, &pid, &true, &BytesN::from_array(&env, &[0u8; 32]));
-        gov_client.vote(&community_rep, &pid, &true, &BytesN::from_array(&env, &[0u8; 32]));
+        gov_client.vote(
+            &ecologist,
+            &pid,
+            &true,
+            &BytesN::from_array(&env, &[0u8; 32]),
+        );
+        gov_client.vote(
+            &community_rep,
+            &pid,
+            &true,
+            &BytesN::from_array(&env, &[0u8; 32]),
+        );
         gov_client.vote(&auditor, &pid, &true, &BytesN::from_array(&env, &[0u8; 32]));
 
         let proposal = gov_client.get_proposal(&pid);
@@ -136,10 +183,22 @@ mod test {
         mkt_client.set_fee_vault(&fee_vault);
 
         let sell_id = mkt_client.place_order(
-            &project_dev, &OrderSide::Sell, &100, &10, &OrderRestriction::None, &None, &None,
+            &project_dev,
+            &OrderSide::Sell,
+            &100,
+            &10,
+            &OrderRestriction::None,
+            &None,
+            &None,
         );
         let buy_id = mkt_client.place_order(
-            &buyer, &OrderSide::Buy, &100, &10, &OrderRestriction::None, &None, &None,
+            &buyer,
+            &OrderSide::Buy,
+            &100,
+            &10,
+            &OrderRestriction::None,
+            &None,
+            &None,
         );
 
         mkt_client.match_orders(&buy_id, &sell_id);
@@ -156,7 +215,10 @@ mod test {
 
         let buyer_tokens = bdc_client.tokens_by_owner(&buyer, &0, &10);
         let receipt_id = ret_client.retire(
-            &buyer, &buyer_tokens, &polygon_id, &ClaimData {
+            &buyer,
+            &buyer_tokens,
+            &polygon_id,
+            &ClaimData {
                 period_start: 0,
                 period_end: 1000,
                 purpose: Bytes::from_slice(&env, b"offset"),
@@ -198,16 +260,30 @@ mod test {
 
         let o1 = BytesN::from_array(&env, &[1u8; 32]);
         let o2 = BytesN::from_array(&env, &[2u8; 32]);
-        mrv_client.register_oracle(&o1, &Bytes::from_slice(&env, b"ipfs://o1"), &OracleType::EdnaLab);
-        mrv_client.register_oracle(&o2, &Bytes::from_slice(&env, b"ipfs://o2"), &OracleType::SatelliteImagery);
+        mrv_client.register_oracle(
+            &o1,
+            &Bytes::from_slice(&env, b"ipfs://o1"),
+            &OracleType::EdnaLab,
+        );
+        mrv_client.register_oracle(
+            &o2,
+            &Bytes::from_slice(&env, b"ipfs://o2"),
+            &OracleType::SatelliteImagery,
+        );
         mrv_client.set_threshold(&2, &3);
 
         let polygon_id = BytesN::from_array(&env, &[10u8; 32]);
         mrv_client.register_polygon(
             &polygon_id,
             &Bytes::from_slice(&env, b"ipfs://poly1"),
-            &BoundingBox { min_lat: 0, max_lat: 10, min_lon: 0, max_lon: 10 },
-            &1000, &0,
+            &BoundingBox {
+                min_lat: 0,
+                max_lat: 10,
+                min_lon: 0,
+                max_lon: 10,
+            },
+            &1000,
+            &0,
             &BytesN::from_array(&env, &[b'B', b'R']),
             &BytesN::from_array(&env, &[1u8; 32]),
         );
@@ -218,7 +294,11 @@ mod test {
         let sig1 = BytesN::from_array(&env, &[0u8; 64]);
         let sig2 = BytesN::from_array(&env, &[0u8; 64]);
         let signatures = vec![&env, (o1.clone(), sig1), (o2.clone(), sig2)];
-        let analyses = vec![&env, BytesN::from_array(&env, &[0u8; 32]), BytesN::from_array(&env, &[0u8; 32])];
+        let analyses = vec![
+            &env,
+            BytesN::from_array(&env, &[0u8; 32]),
+            BytesN::from_array(&env, &[0u8; 32]),
+        ];
         mrv_client.submit_survey(&SurveyData {
             polygon_id: polygon_id.clone(),
             ipfs_cid: Bytes::from_slice(&env, b"ipfs://survey1"),
@@ -299,18 +379,21 @@ mod test {
         bdc_client.authorize_minter(&admin);
 
         let polygon_id = BytesN::from_array(&env, &[10u8; 32]);
-        bdc_client.mint(&buyer, &bdc_token::types::MintParams {
-            polygon_id: polygon_id.clone(),
-            methodology_id: BytesN::from_array(&env, &[0u8; 8]),
-            survey_ipfs_cid: Bytes::new(&env),
-            baseline_bsi: 50,
-            current_bsi: 80,
-            area_ha_contribution: 100,
-            biome: bdc_token::types::Biome::TropicalForest,
-            vintage_year: 2024,
-            vintage_quarter: 1,
-            approval_governance_id: Address::generate(&env),
-        });
+        bdc_client.mint(
+            &buyer,
+            &bdc_token::types::MintParams {
+                polygon_id: polygon_id.clone(),
+                methodology_id: BytesN::from_array(&env, &[0u8; 8]),
+                survey_ipfs_cid: Bytes::new(&env),
+                baseline_bsi: 50,
+                current_bsi: 80,
+                area_ha_contribution: 100,
+                biome: bdc_token::types::Biome::TropicalForest,
+                vintage_year: 2024,
+                vintage_quarter: 1,
+                approval_governance_id: Address::generate(&env),
+            },
+        );
 
         let ret_id = env.register(RetirementContract, ());
         let ret_client = RetirementContractClient::new(&env, &ret_id);
@@ -319,18 +402,28 @@ mod test {
         bdc_client.authorize_burner(&ret_id);
 
         let tokens = vec![&env, 1u64];
-        ret_client.retire(&buyer, &tokens, &polygon_id, &ClaimData {
-            period_start: 0,
-            period_end: 1000,
-            purpose: Bytes::from_slice(&env, b"offset"),
-            jurisdiction: Bytes::from_slice(&env, b"global"),
-        });
+        ret_client.retire(
+            &buyer,
+            &tokens,
+            &polygon_id,
+            &ClaimData {
+                period_start: 0,
+                period_end: 1000,
+                purpose: Bytes::from_slice(&env, b"offset"),
+                jurisdiction: Bytes::from_slice(&env, b"global"),
+            },
+        );
 
-        ret_client.retire(&buyer, &tokens, &polygon_id, &ClaimData {
-            period_start: 0,
-            period_end: 1000,
-            purpose: Bytes::from_slice(&env, b"offset"),
-            jurisdiction: Bytes::from_slice(&env, b"global"),
-        });
+        ret_client.retire(
+            &buyer,
+            &tokens,
+            &polygon_id,
+            &ClaimData {
+                period_start: 0,
+                period_end: 1000,
+                purpose: Bytes::from_slice(&env, b"offset"),
+                jurisdiction: Bytes::from_slice(&env, b"global"),
+            },
+        );
     }
 }

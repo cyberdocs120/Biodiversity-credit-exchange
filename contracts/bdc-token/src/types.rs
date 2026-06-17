@@ -41,7 +41,7 @@ pub struct BdcMetadata {
     pub biome: Biome,
     pub vintage_year: u32,
     pub vintage_quarter: u32,
-    pub approval_governance_id: BytesN<32>,
+    pub approval_governance_id: Address,
     pub metadata_uri: Bytes,
     pub state: BdcState,
     pub retired_at: Option<u64>,
@@ -67,5 +67,5 @@ pub struct MintParams {
     pub biome: Biome,
     pub vintage_year: u32,
     pub vintage_quarter: u32,
-    pub approval_governance_id: BytesN<32>,
+    pub approval_governance_id: Address,
 }

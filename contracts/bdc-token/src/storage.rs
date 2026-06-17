@@ -1,4 +1,5 @@
-use soroban_sdk::{xdr::ToXdr, Address, Bytes, BytesN, Env, Symbol, symbol_short};
+#![allow(dead_code)]
+use soroban_sdk::{symbol_short, xdr::ToXdr, Address, Bytes, BytesN, Env, Symbol};
 
 use crate::types::BdcTokenValue;
 
@@ -28,38 +29,54 @@ pub fn write_admin(env: &Env, admin: &Address) {
 }
 
 pub fn read_admin(env: &Env) -> Address {
-    env.storage().instance().get(&admin_key()).unwrap()
+    env.storage()
+        .instance()
+        .get(&admin_key())
+        .expect("Admin not set")
 }
 
 pub fn has_admin(env: &Env) -> bool {
     env.storage().instance().has(&admin_key())
 }
 
-// Token ID counter
-pub fn write_token_id_counter(env: &Env, counter: u64) {
-    env.storage().instance().set(&token_id_counter_key(), &counter);
+// Token ID Counter
+pub fn write_token_id_counter(env: &Env, count: u64) {
+    env.storage()
+        .instance()
+        .set(&token_id_counter_key(), &count);
 }
 
 pub fn read_token_id_counter(env: &Env) -> u64 {
-    env.storage().instance().get(&token_id_counter_key()).unwrap_or(0)
+    env.storage()
+        .instance()
+        .get(&token_id_counter_key())
+        .expect("Token ID counter not set")
 }
 
-// Total supply
-pub fn write_total_supply(env: &Env, supply: u64) {
-    env.storage().instance().set(&total_supply_key(), &supply);
+// Total Supply
+pub fn write_total_supply(env: &Env, count: u64) {
+    env.storage().instance().set(&total_supply_key(), &count);
 }
 
 pub fn read_total_supply(env: &Env) -> u64 {
-    env.storage().instance().get(&total_supply_key()).unwrap_or(0)
+    env.storage()
+        .instance()
+        .get(&total_supply_key())
+        .expect("Total supply not set")
 }
 
-// Authorized minter
+// Authorized Minter
 pub fn write_authorized_minter(env: &Env, minter: &Address) {
-    env.storage().instance().set(&authorized_minter_key(), minter);
+    env.storage()
+        .instance()
+        .set(&authorized_minter_key(), minter);
 }
 
 pub fn read_authorized_minter(env: &Env) -> Address {
-    env.storage().instance().get(&authorized_minter_key()).unwrap()
+    env.storage()
+        .instance()
+        .get(&authorized_minter_key())
+        .expect("Authorized minter not set")
 }
 
 pub fn has_authorized_minter(env: &Env) -> bool {
@@ -68,11 +85,16 @@ pub fn has_authorized_minter(env: &Env) -> bool {
 
 // Authorized burner
 pub fn write_authorized_burner(env: &Env, burner: &Address) {
-    env.storage().instance().set(&authorized_burner_key(), burner);
+    env.storage()
+        .instance()
+        .set(&authorized_burner_key(), burner);
 }
 
 pub fn read_authorized_burner(env: &Env) -> Address {
-    env.storage().instance().get(&authorized_burner_key()).unwrap()
+    env.storage()
+        .instance()
+        .get(&authorized_burner_key())
+        .unwrap()
 }
 
 pub fn has_authorized_burner(env: &Env) -> bool {

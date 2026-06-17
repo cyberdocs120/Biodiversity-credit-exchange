@@ -1,4 +1,5 @@
 #![cfg(test)]
+#![allow(clippy::bool_assert_comparison)]
 use super::*;
 use soroban_sdk::testutils::{Address as _, Ledger as _};
 use soroban_sdk::{Address, Bytes, BytesN, Env};
@@ -23,14 +24,11 @@ fn make_ipfs_cid(env: &Env) -> Bytes {
     Bytes::from_slice(env, b"QmTest123")
 }
 
-fn make_gov_id(env: &Env) -> BytesN<32> {
-    BytesN::from_array(env, &[0u8; 32])
+fn make_gov_id(env: &Env) -> Address {
+    Address::generate(env)
 }
 
-fn make_propose_params(
-    env: &Env,
-    beneficiary: &Address,
-) -> ProposeParams {
+fn make_propose_params(env: &Env, beneficiary: &Address) -> ProposeParams {
     ProposeParams {
         polygon_id: make_polygon_id(env, 1),
         survey_hash: make_survey_hash(env, 2),
@@ -50,8 +48,9 @@ fn make_propose_params(
 
 fn setup_test(env: &Env) -> (Address, ApprovalGovContractClient<'static>) {
     let admin = Address::generate(env);
-    let contract_id = env.register(ApprovalGovContract, (&admin, 3u32, 604800u64));
+    let contract_id = env.register(ApprovalGovContract, ());
     let client = ApprovalGovContractClient::new(env, &contract_id);
+    client.initialize(&admin, &3u32, &604800u64);
     (admin, client)
 }
 
@@ -343,8 +342,8 @@ fn test_close_proposal_after_deadline_approved() {
 
     let pid = client.propose(&s1, &params);
     let comment = make_comment(&env);
-    client.vote(&s1, &pid, &true, &comment);  // approve weight=10 (below threshold of 30)
-    client.vote(&s2, &pid, &true, &comment);  // approve weight=5 (total=15, still below 30)
+    client.vote(&s1, &pid, &true, &comment); // approve weight=10 (below threshold of 30)
+    client.vote(&s2, &pid, &true, &comment); // approve weight=5 (total=15, still below 30)
 
     // Now lower the threshold and have admin close the proposal
     client.set_min_threshold(&3);
@@ -391,7 +390,7 @@ fn test_close_proposal_rejected_after_deadline() {
 
     let pid = client.propose(&s1, &params);
     let comment = make_comment(&env);
-    client.vote(&s1, &pid, &true, &comment);  // approve weight=2 < threshold=3
+    client.vote(&s1, &pid, &true, &comment); // approve weight=2 < threshold=3
 
     // Advance past deadline
     env.ledger().set_timestamp(1000 + 604800 + 1);

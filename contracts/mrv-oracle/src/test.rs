@@ -1,11 +1,13 @@
 #![cfg(test)]
+#![allow(clippy::bool_assert_comparison)]
 use super::*;
 use soroban_sdk::{testutils::Address as _, Address, Bytes, BytesN, Env, Vec};
 
 fn setup_test(env: &Env) -> (Address, MrvOracleContractClient<'static>) {
     let admin = Address::generate(env);
-    let contract_id = env.register(MrvOracleContract, (&admin,));
+    let contract_id = env.register(MrvOracleContract, ());
     let client = MrvOracleContractClient::new(env, &contract_id);
+    client.initialize(&admin);
     (admin, client)
 }
 
@@ -124,7 +126,15 @@ fn test_register_polygon() {
     let project_id = BytesN::from_array(&env, &[3; 32]);
 
     env.mock_all_auths();
-    client.register_polygon(&polygon_id, &geometry_cid, &bbox, &area_ha, &biome, &country, &project_id);
+    client.register_polygon(
+        &polygon_id,
+        &geometry_cid,
+        &bbox,
+        &area_ha,
+        &biome,
+        &country,
+        &project_id,
+    );
 
     let polygon = client.get_polygon(&polygon_id);
     assert_eq!(polygon.active, true);
@@ -147,7 +157,15 @@ fn test_close_polygon() {
     };
 
     env.mock_all_auths();
-    client.register_polygon(&polygon_id, &geometry_cid, &bbox, &1000, &1, &BytesN::from_array(&env, b"BR"), &BytesN::from_array(&env, &[3; 32]));
+    client.register_polygon(
+        &polygon_id,
+        &geometry_cid,
+        &bbox,
+        &1000,
+        &1,
+        &BytesN::from_array(&env, b"BR"),
+        &BytesN::from_array(&env, &[3; 32]),
+    );
     client.close_polygon(&polygon_id);
 
     let polygon = client.get_polygon(&polygon_id);
@@ -189,17 +207,45 @@ fn test_submit_survey_basic() {
     client.register_oracle(&oracle_pubkey, &uri, &OracleType::EdnaLab);
 
     let polygon_id = BytesN::from_array(&env, &[2; 32]);
-    let bbox = BoundingBox { min_lat: 0, max_lat: 10, min_lon: 0, max_lon: 10 };
-    client.register_polygon(&polygon_id, &uri, &bbox, &100, &1, &BytesN::from_array(&env, b"US"), &BytesN::from_array(&env, &[3; 32]));
+    let bbox = BoundingBox {
+        min_lat: 0,
+        max_lat: 10,
+        min_lon: 0,
+        max_lon: 10,
+    };
+    client.register_polygon(
+        &polygon_id,
+        &uri,
+        &bbox,
+        &100,
+        &1,
+        &BytesN::from_array(&env, b"US"),
+        &BytesN::from_array(&env, &[3; 32]),
+    );
 
-    let signatures = Vec::from_array(&env, [(oracle_pubkey.clone(), BytesN::from_array(&env, &[0; 64]))]);
+    let signatures = Vec::from_array(
+        &env,
+        [(oracle_pubkey.clone(), BytesN::from_array(&env, &[0; 64]))],
+    );
     let analyses = Vec::new(&env);
     let beneficiary = Address::generate(&env);
     let meth_id = BytesN::from_array(&env, &[0; 8]);
 
     let data = make_survey_data(
-        &env, &polygon_id, &uri, 1000, &signatures, &analyses,
-        20, 50, 100, 1, 2024, 1, &meth_id, &beneficiary,
+        &env,
+        &polygon_id,
+        &uri,
+        1000,
+        &signatures,
+        &analyses,
+        20,
+        50,
+        100,
+        1,
+        2024,
+        1,
+        &meth_id,
+        &beneficiary,
     );
 
     let _survey_hash = client.submit_survey(&data);
@@ -220,17 +266,45 @@ fn test_dispute_flow() {
     client.register_oracle(&oracle_pubkey, &uri, &OracleType::EdnaLab);
 
     let polygon_id = BytesN::from_array(&env, &[2; 32]);
-    let bbox = BoundingBox { min_lat: 0, max_lat: 10, min_lon: 0, max_lon: 10 };
-    client.register_polygon(&polygon_id, &uri, &bbox, &100, &1, &BytesN::from_array(&env, b"US"), &BytesN::from_array(&env, &[3; 32]));
+    let bbox = BoundingBox {
+        min_lat: 0,
+        max_lat: 10,
+        min_lon: 0,
+        max_lon: 10,
+    };
+    client.register_polygon(
+        &polygon_id,
+        &uri,
+        &bbox,
+        &100,
+        &1,
+        &BytesN::from_array(&env, b"US"),
+        &BytesN::from_array(&env, &[3; 32]),
+    );
 
-    let signatures = Vec::from_array(&env, [(oracle_pubkey.clone(), BytesN::from_array(&env, &[0; 64]))]);
+    let signatures = Vec::from_array(
+        &env,
+        [(oracle_pubkey.clone(), BytesN::from_array(&env, &[0; 64]))],
+    );
     let analyses = Vec::new(&env);
     let beneficiary = Address::generate(&env);
     let meth_id = BytesN::from_array(&env, &[0; 8]);
 
     let data = make_survey_data(
-        &env, &polygon_id, &uri, 1000, &signatures, &analyses,
-        20, 50, 100, 1, 2024, 1, &meth_id, &beneficiary,
+        &env,
+        &polygon_id,
+        &uri,
+        1000,
+        &signatures,
+        &analyses,
+        20,
+        50,
+        100,
+        1,
+        2024,
+        1,
+        &meth_id,
+        &beneficiary,
     );
 
     let hash = client.submit_survey(&data);
@@ -261,8 +335,20 @@ fn test_submit_while_paused() {
     let meth_id = BytesN::from_array(&env, &[0; 8]);
 
     let data = make_survey_data(
-        &env, &polygon_id, &uri, 1000, &signatures, &analyses,
-        20, 50, 100, 1, 2024, 1, &meth_id, &beneficiary,
+        &env,
+        &polygon_id,
+        &uri,
+        1000,
+        &signatures,
+        &analyses,
+        20,
+        50,
+        100,
+        1,
+        2024,
+        1,
+        &meth_id,
+        &beneficiary,
     );
 
     client.submit_survey(&data);
@@ -277,20 +363,52 @@ fn test_submit_below_threshold_rejected() {
     client.set_threshold(&2, &2);
 
     let oracle_pubkey = BytesN::from_array(&env, &[1; 32]);
-    client.register_oracle(&oracle_pubkey, &Bytes::from_slice(&env, b"uri"), &OracleType::EdnaLab);
+    client.register_oracle(
+        &oracle_pubkey,
+        &Bytes::from_slice(&env, b"uri"),
+        &OracleType::EdnaLab,
+    );
 
     let polygon_id = BytesN::from_array(&env, &[2; 32]);
-    let bbox = BoundingBox { min_lat: 0, max_lat: 10, min_lon: 0, max_lon: 10 };
-    client.register_polygon(&polygon_id, &Bytes::from_slice(&env, b"uri"), &bbox, &100, &1, &BytesN::from_array(&env, b"US"), &BytesN::from_array(&env, &[3; 32]));
+    let bbox = BoundingBox {
+        min_lat: 0,
+        max_lat: 10,
+        min_lon: 0,
+        max_lon: 10,
+    };
+    client.register_polygon(
+        &polygon_id,
+        &Bytes::from_slice(&env, b"uri"),
+        &bbox,
+        &100,
+        &1,
+        &BytesN::from_array(&env, b"US"),
+        &BytesN::from_array(&env, &[3; 32]),
+    );
 
-    let signatures = Vec::from_array(&env, [(oracle_pubkey.clone(), BytesN::from_array(&env, &[0; 64]))]);
+    let signatures = Vec::from_array(
+        &env,
+        [(oracle_pubkey.clone(), BytesN::from_array(&env, &[0; 64]))],
+    );
     let analyses = Vec::new(&env);
     let beneficiary = Address::generate(&env);
     let meth_id = BytesN::from_array(&env, &[0; 8]);
 
     let data = make_survey_data(
-        &env, &polygon_id, &Bytes::from_slice(&env, b"uri"), 1000, &signatures, &analyses,
-        20, 50, 100, 1, 2024, 1, &meth_id, &beneficiary,
+        &env,
+        &polygon_id,
+        &Bytes::from_slice(&env, b"uri"),
+        1000,
+        &signatures,
+        &analyses,
+        20,
+        50,
+        100,
+        1,
+        2024,
+        1,
+        &meth_id,
+        &beneficiary,
     );
 
     client.submit_survey(&data);
@@ -304,18 +422,46 @@ fn test_submit_invalid_oracle_rejected() {
     env.mock_all_auths();
 
     let polygon_id = BytesN::from_array(&env, &[2; 32]);
-    let bbox = BoundingBox { min_lat: 0, max_lat: 10, min_lon: 0, max_lon: 10 };
-    client.register_polygon(&polygon_id, &Bytes::from_slice(&env, b"uri"), &bbox, &100, &1, &BytesN::from_array(&env, b"US"), &BytesN::from_array(&env, &[3; 32]));
+    let bbox = BoundingBox {
+        min_lat: 0,
+        max_lat: 10,
+        min_lon: 0,
+        max_lon: 10,
+    };
+    client.register_polygon(
+        &polygon_id,
+        &Bytes::from_slice(&env, b"uri"),
+        &bbox,
+        &100,
+        &1,
+        &BytesN::from_array(&env, b"US"),
+        &BytesN::from_array(&env, &[3; 32]),
+    );
 
     let oracle_pubkey = BytesN::from_array(&env, &[1; 32]); // Not registered
-    let signatures = Vec::from_array(&env, [(oracle_pubkey.clone(), BytesN::from_array(&env, &[0; 64]))]);
+    let signatures = Vec::from_array(
+        &env,
+        [(oracle_pubkey.clone(), BytesN::from_array(&env, &[0; 64]))],
+    );
     let analyses = Vec::new(&env);
     let beneficiary = Address::generate(&env);
     let meth_id = BytesN::from_array(&env, &[0; 8]);
 
     let data = make_survey_data(
-        &env, &polygon_id, &Bytes::from_slice(&env, b"uri"), 1000, &signatures, &analyses,
-        20, 50, 100, 1, 2024, 1, &meth_id, &beneficiary,
+        &env,
+        &polygon_id,
+        &Bytes::from_slice(&env, b"uri"),
+        1000,
+        &signatures,
+        &analyses,
+        20,
+        50,
+        100,
+        1,
+        2024,
+        1,
+        &meth_id,
+        &beneficiary,
     );
 
     client.submit_survey(&data);
@@ -333,17 +479,45 @@ fn test_duplicate_survey_rejected() {
     client.register_oracle(&oracle_pubkey, &uri, &OracleType::EdnaLab);
 
     let polygon_id = BytesN::from_array(&env, &[2; 32]);
-    let bbox = BoundingBox { min_lat: 0, max_lat: 10, min_lon: 0, max_lon: 10 };
-    client.register_polygon(&polygon_id, &uri, &bbox, &100, &1, &BytesN::from_array(&env, b"US"), &BytesN::from_array(&env, &[3; 32]));
+    let bbox = BoundingBox {
+        min_lat: 0,
+        max_lat: 10,
+        min_lon: 0,
+        max_lon: 10,
+    };
+    client.register_polygon(
+        &polygon_id,
+        &uri,
+        &bbox,
+        &100,
+        &1,
+        &BytesN::from_array(&env, b"US"),
+        &BytesN::from_array(&env, &[3; 32]),
+    );
 
-    let signatures = Vec::from_array(&env, [(oracle_pubkey.clone(), BytesN::from_array(&env, &[0; 64]))]);
+    let signatures = Vec::from_array(
+        &env,
+        [(oracle_pubkey.clone(), BytesN::from_array(&env, &[0; 64]))],
+    );
     let analyses = Vec::new(&env);
     let beneficiary = Address::generate(&env);
     let meth_id = BytesN::from_array(&env, &[0; 8]);
 
     let data = make_survey_data(
-        &env, &polygon_id, &uri, 1000, &signatures, &analyses,
-        20, 50, 100, 1, 2024, 1, &meth_id, &beneficiary,
+        &env,
+        &polygon_id,
+        &uri,
+        1000,
+        &signatures,
+        &analyses,
+        20,
+        50,
+        100,
+        1,
+        2024,
+        1,
+        &meth_id,
+        &beneficiary,
     );
 
     client.submit_survey(&data);

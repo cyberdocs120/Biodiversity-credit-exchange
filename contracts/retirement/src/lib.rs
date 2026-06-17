@@ -1,5 +1,8 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, panic_with_error, symbol_short, xdr::ToXdr, Address, Bytes, BytesN, Env, IntoVal, Vec};
+use soroban_sdk::{
+    contract, contractimpl, panic_with_error, symbol_short, xdr::ToXdr, Address, Bytes, BytesN,
+    Env, IntoVal, Vec,
+};
 
 mod errors;
 mod geometry;
@@ -11,8 +14,8 @@ mod types;
 mod test;
 
 pub use crate::errors::RetirementError;
-pub use crate::types::{ClaimData, Point, RetirementReceipt};
 use crate::storage::*;
+pub use crate::types::{ClaimData, Point, RetirementReceipt};
 
 #[contract]
 pub struct RetirementContract;
@@ -54,7 +57,7 @@ impl RetirementContract {
     ) -> BytesN<32> {
         retirer.require_auth();
 
-        if token_ids.len() == 0 {
+        if token_ids.is_empty() {
             panic_with_error!(&env, RetirementError::EmptyTokenList);
         }
 
@@ -110,7 +113,12 @@ impl RetirementContract {
 
         env.events().publish(
             (symbol_short!("retr"), symbol_short!("done")),
-            (receipt_id.clone(), polygon_id, token_ids.len() as u64, total_credits),
+            (
+                receipt_id.clone(),
+                polygon_id,
+                token_ids.len() as u64,
+                total_credits,
+            ),
         );
 
         receipt_id
@@ -174,11 +182,7 @@ impl RetirementContract {
         panic_with_error!(&env, RetirementError::ReceiptNotFound);
     }
 
-    pub fn prove_polygon_containment(
-        _env: Env,
-        point: Point,
-        polygon: Vec<Point>,
-    ) -> bool {
+    pub fn prove_polygon_containment(_env: Env, point: Point, polygon: Vec<Point>) -> bool {
         geometry::point_in_polygon(point, polygon)
     }
 }
@@ -207,4 +211,3 @@ fn compute_receipt_id(
 
     env.crypto().sha256(&hash_input).into()
 }
-

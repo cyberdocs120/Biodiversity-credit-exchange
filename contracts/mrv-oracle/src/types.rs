@@ -19,7 +19,7 @@ pub struct OracleNode {
     pub active: bool,
     pub registered_at: u64,
     pub total_surveys: u64,
-    pub accuracy_score: u32,  // 0-100
+    pub accuracy_score: u32, // 0-100
 }
 
 #[derive(Clone, Debug)]

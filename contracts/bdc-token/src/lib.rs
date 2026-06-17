@@ -1,21 +1,23 @@
 #![no_std]
-mod storage;
-pub mod types;
 mod errors;
+mod storage;
 #[cfg(test)]
 mod test;
+pub mod types;
 
-use soroban_sdk::{contract, contractimpl, panic_with_error, symbol_short, Address, Bytes, BytesN, Env, Vec};
+use errors::BdcTokenError;
+use soroban_sdk::{
+    contract, contractimpl, panic_with_error, symbol_short, Address, Bytes, BytesN, Env, Vec,
+};
 use storage::*;
 use types::*;
-use errors::BdcTokenError;
 
 #[contract]
 pub struct BdcTokenContract;
 
 #[contractimpl]
 impl BdcTokenContract {
-    pub fn __constructor(env: Env, admin: Address) {
+    pub fn initialize(env: Env, admin: Address) {
         admin.require_auth();
         write_admin(&env, &admin);
         write_token_id_counter(&env, 0);
@@ -90,7 +92,8 @@ impl BdcTokenContract {
     }
 
     pub fn mint(env: Env, to: Address, params: MintParams) -> u64 {
-        env.current_contract_address().require_auth();
+        let minter = read_authorized_minter(&env);
+        minter.require_auth();
 
         let token_id = read_token_id_counter(&env) + 1;
         write_token_id_counter(&env, token_id);
@@ -121,7 +124,11 @@ impl BdcTokenContract {
         write_token(&env, token_id, &token);
         write_owner_count(&env, &to, read_owner_count(&env, &to) + 1);
         write_total_supply(&env, read_total_supply(&env) + 1);
-        write_polygon_token_count(&env, &params.polygon_id, read_polygon_token_count(&env, &params.polygon_id) + 1);
+        write_polygon_token_count(
+            &env,
+            &params.polygon_id,
+            read_polygon_token_count(&env, &params.polygon_id) + 1,
+        );
 
         env.events().publish(
             (symbol_short!("bdc"), symbol_short!("mint")),

@@ -1,7 +1,7 @@
 #![allow(dead_code)]
-use soroban_sdk::{Address, Bytes, BytesN, Env, Symbol, symbol_short};
+use soroban_sdk::{symbol_short, Address, Bytes, BytesN, Env, Symbol};
 
-use crate::types::{OracleNode, HabitatPolygon, SurveyRecord};
+use crate::types::{HabitatPolygon, OracleNode, SurveyRecord};
 
 pub fn admin_key() -> Symbol {
     symbol_short!("Admin")
@@ -37,7 +37,10 @@ pub fn write_admin(env: &Env, admin: &Address) {
 }
 
 pub fn read_admin(env: &Env) -> Address {
-    env.storage().instance().get(&admin_key()).unwrap()
+    env.storage()
+        .instance()
+        .get(&admin_key())
+        .expect("mrv-oracle: Admin not set")
 }
 
 pub fn has_admin(env: &Env) -> bool {
@@ -60,8 +63,16 @@ pub fn write_threshold(env: &Env, n: u32, d: u32) {
 }
 
 pub fn read_threshold(env: &Env) -> (u32, u32) {
-    let n = env.storage().instance().get(&threshold_n_key()).unwrap_or(1);
-    let d = env.storage().instance().get(&threshold_d_key()).unwrap_or(1);
+    let n = env
+        .storage()
+        .instance()
+        .get(&threshold_n_key())
+        .unwrap_or(1);
+    let d = env
+        .storage()
+        .instance()
+        .get(&threshold_d_key())
+        .unwrap_or(1);
     (n, d)
 }
 
@@ -71,7 +82,10 @@ pub fn write_oracle_count(env: &Env, count: u32) {
 }
 
 pub fn read_oracle_count(env: &Env) -> u32 {
-    env.storage().instance().get(&oracle_count_key()).unwrap_or(0)
+    env.storage()
+        .instance()
+        .get(&oracle_count_key())
+        .unwrap_or(0)
 }
 
 // BDC Token Address
@@ -80,7 +94,10 @@ pub fn write_bdc_token(env: &Env, addr: &Address) {
 }
 
 pub fn read_bdc_token(env: &Env) -> Address {
-    env.storage().instance().get(&bdc_token_key()).unwrap()
+    env.storage()
+        .instance()
+        .get(&bdc_token_key())
+        .expect("mrv-oracle: BDC token not set")
 }
 
 pub fn has_bdc_token(env: &Env) -> bool {
@@ -93,7 +110,10 @@ pub fn write_approval_gov(env: &Env, addr: &Address) {
 }
 
 pub fn read_approval_gov(env: &Env) -> Address {
-    env.storage().instance().get(&approval_gov_key()).unwrap()
+    env.storage()
+        .instance()
+        .get(&approval_gov_key())
+        .expect("mrv-oracle: Approval gov not set")
 }
 
 pub fn has_approval_gov(env: &Env) -> bool {

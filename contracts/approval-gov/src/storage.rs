@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use soroban_sdk::{xdr::ToXdr, Address, Bytes, Env, Symbol, symbol_short};
+use soroban_sdk::{symbol_short, xdr::ToXdr, Address, Bytes, Env, Symbol};
 
 use crate::types::{Proposal, Stakeholder};
 
@@ -37,7 +37,10 @@ pub fn write_admin(env: &Env, admin: &Address) {
 }
 
 pub fn read_admin(env: &Env) -> Address {
-    env.storage().instance().get(&admin_key()).unwrap()
+    env.storage()
+        .instance()
+        .get(&admin_key())
+        .expect("approval-gov: Admin not set")
 }
 
 // BDC Token
@@ -46,7 +49,10 @@ pub fn write_bdc_token(env: &Env, addr: &Address) {
 }
 
 pub fn read_bdc_token(env: &Env) -> Address {
-    env.storage().instance().get(&bdc_token_key()).unwrap()
+    env.storage()
+        .instance()
+        .get(&bdc_token_key())
+        .expect("approval-gov: BDC token not set")
 }
 
 pub fn has_bdc_token(env: &Env) -> bool {
@@ -59,7 +65,10 @@ pub fn write_mrv_oracle(env: &Env, addr: &Address) {
 }
 
 pub fn read_mrv_oracle(env: &Env) -> Address {
-    env.storage().instance().get(&mrv_oracle_key()).unwrap()
+    env.storage()
+        .instance()
+        .get(&mrv_oracle_key())
+        .expect("approval-gov: MRV oracle not set")
 }
 
 pub fn has_mrv_oracle(env: &Env) -> bool {
@@ -68,11 +77,16 @@ pub fn has_mrv_oracle(env: &Env) -> bool {
 
 // Min threshold
 pub fn write_min_threshold(env: &Env, min_weight: u32) {
-    env.storage().instance().set(&min_threshold_key(), &min_weight);
+    env.storage()
+        .instance()
+        .set(&min_threshold_key(), &min_weight);
 }
 
 pub fn read_min_threshold(env: &Env) -> u32 {
-    env.storage().instance().get(&min_threshold_key()).unwrap_or(0)
+    env.storage()
+        .instance()
+        .get(&min_threshold_key())
+        .unwrap_or(0)
 }
 
 // Voting period (seconds)
@@ -81,25 +95,38 @@ pub fn write_voting_period(env: &Env, secs: u64) {
 }
 
 pub fn read_voting_period(env: &Env) -> u64 {
-    env.storage().instance().get(&voting_period_key()).unwrap_or(604800)
+    env.storage()
+        .instance()
+        .get(&voting_period_key())
+        .unwrap_or(604800)
 }
 
 // Proposal counter
 pub fn write_proposal_counter(env: &Env, count: u64) {
-    env.storage().instance().set(&proposal_counter_key(), &count);
+    env.storage()
+        .instance()
+        .set(&proposal_counter_key(), &count);
 }
 
 pub fn read_proposal_counter(env: &Env) -> u64 {
-    env.storage().instance().get(&proposal_counter_key()).unwrap_or(0)
+    env.storage()
+        .instance()
+        .get(&proposal_counter_key())
+        .unwrap_or(0)
 }
 
 // Stakeholder counter
 pub fn write_stakeholder_counter(env: &Env, count: u32) {
-    env.storage().instance().set(&stakeholder_counter_key(), &count);
+    env.storage()
+        .instance()
+        .set(&stakeholder_counter_key(), &count);
 }
 
 pub fn read_stakeholder_counter(env: &Env) -> u32 {
-    env.storage().instance().get(&stakeholder_counter_key()).unwrap_or(0)
+    env.storage()
+        .instance()
+        .get(&stakeholder_counter_key())
+        .unwrap_or(0)
 }
 
 // Stakeholder storage keys (prefix 0x10 + address XDR)

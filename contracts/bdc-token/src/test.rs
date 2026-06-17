@@ -1,11 +1,18 @@
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod test {
     use crate::types::*;
     use crate::{BdcTokenContract, BdcTokenContractClient};
     use soroban_sdk::testutils::{Address as _, Events, Ledger as _};
     use soroban_sdk::{symbol_short, Address, Bytes, BytesN, Env, IntoVal};
 
-    fn setup() -> (Env, BdcTokenContractClient<'static>, Address, Address, Address) {
+    fn setup() -> (
+        Env,
+        BdcTokenContractClient<'static>,
+        Address,
+        Address,
+        Address,
+    ) {
         let env = Env::default();
         env.mock_all_auths();
 
@@ -13,9 +20,10 @@ mod test {
         let minter = Address::generate(&env);
         let receiver = Address::generate(&env);
 
-        let contract_id = env.register(BdcTokenContract, (&admin,));
+        let contract_id = env.register(BdcTokenContract, ());
         let client = BdcTokenContractClient::new(&env, &contract_id);
 
+        client.initialize(&admin);
         client.authorize_minter(&minter);
 
         (env, client, admin, minter, receiver)
@@ -32,7 +40,7 @@ mod test {
             biome: Biome::TropicalForest,
             vintage_year: 2025,
             vintage_quarter: 2,
-            approval_governance_id: BytesN::from_array(env, &[3u8; 32]),
+            approval_governance_id: Address::generate(env),
         }
     }
 

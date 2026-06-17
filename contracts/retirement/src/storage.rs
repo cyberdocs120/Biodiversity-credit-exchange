@@ -1,4 +1,5 @@
-use soroban_sdk::{xdr::ToXdr, Address, Bytes, BytesN, Env, Symbol, symbol_short, Vec};
+#![allow(dead_code)]
+use soroban_sdk::{symbol_short, xdr::ToXdr, Address, Bytes, BytesN, Env, Symbol, Vec};
 
 use crate::types::RetirementReceipt;
 
@@ -42,11 +43,16 @@ pub fn has_bdc_token(env: &Env) -> bool {
 
 // Receipt counter
 pub fn write_receipt_counter(env: &Env, counter: u64) {
-    env.storage().instance().set(&receipt_counter_key(), &counter);
+    env.storage()
+        .instance()
+        .set(&receipt_counter_key(), &counter);
 }
 
 pub fn read_receipt_counter(env: &Env) -> u64 {
-    env.storage().instance().get(&receipt_counter_key()).unwrap_or(0)
+    env.storage()
+        .instance()
+        .get(&receipt_counter_key())
+        .unwrap_or(0)
 }
 
 // Receipt storage keys (prefix 0x10 + receipt_id)
@@ -101,12 +107,20 @@ pub fn claim_index_key(env: &Env, polygon_id: &BytesN<32>, retirer: &Address) ->
     key
 }
 
-pub fn write_claim_index(env: &Env, polygon_id: &BytesN<32>, retirer: &Address, receipt_ids: &Vec<BytesN<32>>) {
+pub fn write_claim_index(
+    env: &Env,
+    polygon_id: &BytesN<32>,
+    retirer: &Address,
+    receipt_ids: &Vec<BytesN<32>>,
+) {
     let key = claim_index_key(env, polygon_id, retirer);
     env.storage().persistent().set(&key, receipt_ids);
 }
 
 pub fn read_claim_index(env: &Env, polygon_id: &BytesN<32>, retirer: &Address) -> Vec<BytesN<32>> {
     let key = claim_index_key(env, polygon_id, retirer);
-    env.storage().persistent().get(&key).unwrap_or_else(|| Vec::new(env))
+    env.storage()
+        .persistent()
+        .get(&key)
+        .unwrap_or_else(|| Vec::new(env))
 }

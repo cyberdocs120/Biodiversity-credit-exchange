@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use soroban_sdk::{Bytes, BytesN, Env, Vec};
 
 pub fn compute_root(env: &Env, token_ids: &Vec<u64>) -> BytesN<32> {
@@ -82,15 +83,20 @@ fn get_proof_recursive(env: &Env, nodes: Vec<BytesN<32>>, index: u32, proof: &mu
     get_proof_recursive(env, next_level, index / 2, proof);
 }
 
-
-pub fn verify(env: &Env, root: &BytesN<32>, proof: &Vec<BytesN<32>>, leaf: &BytesN<32>, index: u32) -> bool {
+pub fn verify(
+    env: &Env,
+    root: &BytesN<32>,
+    proof: &Vec<BytesN<32>>,
+    leaf: &BytesN<32>,
+    index: u32,
+) -> bool {
     let mut current_hash = leaf.clone();
     let mut current_index = index;
 
     for i in 0..proof.len() {
         let sibling = proof.get(i).unwrap();
         let mut hash_input = Bytes::new(env);
-        if current_index % 2 == 0 {
+        if current_index.is_multiple_of(2) {
             hash_input.append(&Bytes::from_slice(env, &current_hash.to_array()));
             hash_input.append(&Bytes::from_slice(env, &sibling.to_array()));
         } else {

@@ -1,17 +1,20 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, panic_with_error, symbol_short, Address, Env, Vec, IntoVal};
+#![allow(clippy::too_many_arguments)]
+use soroban_sdk::{
+    contract, contractimpl, panic_with_error, symbol_short, Address, Env, IntoVal, Vec,
+};
 
-mod types;
 mod errors;
-mod storage;
 mod order_book;
+mod storage;
+mod types;
 
 #[cfg(test)]
 mod test;
 
-pub use crate::types::{Order, OrderSide, OrderRestriction, OrderStatus};
 pub use crate::errors::MarketError;
 use crate::storage::*;
+pub use crate::types::{Order, OrderRestriction, OrderSide, OrderStatus};
 
 #[contract]
 pub struct MarketplaceContract;
@@ -125,10 +128,8 @@ impl MarketplaceContract {
         order.status = OrderStatus::Cancelled;
         write_order(&env, order_id, &order);
 
-        env.events().publish(
-            (symbol_short!("mkt"), symbol_short!("canc")),
-            order_id,
-        );
+        env.events()
+            .publish((symbol_short!("mkt"), symbol_short!("canc")), order_id);
     }
 
     pub fn get_order(env: Env, order_id: u64) -> Order {
@@ -197,29 +198,29 @@ impl MarketplaceContract {
         }
 
         // FOK (Fill-or-Kill) enforcement
-        if buy_order.restrictions == OrderRestriction::FillOrKill && buy_order.remaining_qty > sell_order.remaining_qty {
+        if buy_order.restrictions == OrderRestriction::FillOrKill
+            && buy_order.remaining_qty > sell_order.remaining_qty
+        {
             buy_order.status = OrderStatus::Cancelled;
             write_order(&env, buy_id, &buy_order);
-            env.events().publish(
-                (symbol_short!("mkt"), symbol_short!("canc")),
-                buy_id,
-            );
+            env.events()
+                .publish((symbol_short!("mkt"), symbol_short!("canc")), buy_id);
             return (0, 0, 0);
         }
-        if sell_order.restrictions == OrderRestriction::FillOrKill && sell_order.remaining_qty > buy_order.remaining_qty {
+        if sell_order.restrictions == OrderRestriction::FillOrKill
+            && sell_order.remaining_qty > buy_order.remaining_qty
+        {
             sell_order.status = OrderStatus::Cancelled;
             write_order(&env, sell_id, &sell_order);
-            env.events().publish(
-                (symbol_short!("mkt"), symbol_short!("canc")),
-                sell_id,
-            );
+            env.events()
+                .publish((symbol_short!("mkt"), symbol_short!("canc")), sell_id);
             return (0, 0, 0);
         }
 
         let fill_qty = buy_order.remaining_qty.min(sell_order.remaining_qty);
         let fill_price = sell_order.price;
         let fill_value = fill_price * i128::from(fill_qty);
-        
+
         let fee_rate = read_fee_rate(&env);
         let fee = fill_value * i128::from(fee_rate) / 10000;
 
@@ -248,16 +249,24 @@ impl MarketplaceContract {
 
             let mut matches = true;
             if let Some(b) = buy_order.biome_filter {
-                if metadata.biome as u32 != b { matches = false; }
+                if metadata.biome as u32 != b {
+                    matches = false;
+                }
             }
             if let Some(v) = buy_order.vintage_filter {
-                if metadata.vintage_year != v { matches = false; }
+                if metadata.vintage_year != v {
+                    matches = false;
+                }
             }
             if let Some(b) = sell_order.biome_filter {
-                if metadata.biome as u32 != b { matches = false; }
+                if metadata.biome as u32 != b {
+                    matches = false;
+                }
             }
             if let Some(v) = sell_order.vintage_filter {
-                if metadata.vintage_year != v { matches = false; }
+                if metadata.vintage_year != v {
+                    matches = false;
+                }
             }
 
             if matches {
@@ -274,7 +283,12 @@ impl MarketplaceContract {
             env.invoke_contract::<()>(
                 &bdc_id,
                 &soroban_sdk::Symbol::new(&env, "transfer"),
-                (sell_order.trader.clone(), buy_order.trader.clone(), token_id).into_val(&env),
+                (
+                    sell_order.trader.clone(),
+                    buy_order.trader.clone(),
+                    token_id,
+                )
+                    .into_val(&env),
             );
         }
 
@@ -282,7 +296,12 @@ impl MarketplaceContract {
         env.invoke_contract::<()>(
             &usdc_id,
             &soroban_sdk::Symbol::new(&env, "transfer"),
-            (buy_order.trader.clone(), sell_order.trader.clone(), fill_value - fee).into_val(&env),
+            (
+                buy_order.trader.clone(),
+                sell_order.trader.clone(),
+                fill_value - fee,
+            )
+                .into_val(&env),
         );
         if fee > 0 {
             env.invoke_contract::<()>(
@@ -333,12 +352,12 @@ impl MarketplaceContract {
                             can_match = false;
                         }
                     }
-                    
+
                     if can_match {
                         Self::match_orders(env.clone(), bid.order_id, ask.order_id);
                         match_count += 1;
                     } else {
-                        break; 
+                        break;
                     }
                 } else {
                     break;

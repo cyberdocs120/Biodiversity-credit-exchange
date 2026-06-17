@@ -1,5 +1,9 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, symbol_short, Address, Bytes, BytesN, Env, Vec, panic_with_error, IntoVal, Symbol};
+#![allow(clippy::too_many_arguments)]
+use soroban_sdk::{
+    contract, contractimpl, panic_with_error, symbol_short, Address, Bytes, BytesN, Env, IntoVal,
+    Symbol, Vec,
+};
 
 mod errors;
 mod storage;
@@ -9,8 +13,10 @@ mod types;
 mod test;
 
 pub use crate::errors::MrvOracleError;
-pub use crate::types::{OracleNode, OracleType, HabitatPolygon, SurveyRecord, BoundingBox, SurveyData, ProposeParams};
 use crate::storage::*;
+pub use crate::types::{
+    BoundingBox, HabitatPolygon, OracleNode, OracleType, ProposeParams, SurveyData, SurveyRecord,
+};
 
 #[contract]
 pub struct MrvOracleContract;
@@ -73,7 +79,8 @@ impl MrvOracleContract {
         let count = read_oracle_count(&env) + 1;
         write_oracle_count(&env, count);
 
-        env.events().publish((symbol_short!("mrvo"), symbol_short!("reg")), pubkey);
+        env.events()
+            .publish((symbol_short!("mrvo"), symbol_short!("reg")), pubkey);
     }
 
     pub fn revoke_oracle(env: Env, pubkey: BytesN<32>) {
@@ -85,7 +92,8 @@ impl MrvOracleContract {
         node.active = false;
         write_oracle(&env, &pubkey, &node);
 
-        env.events().publish((symbol_short!("mrvo"), symbol_short!("rev")), pubkey);
+        env.events()
+            .publish((symbol_short!("mrvo"), symbol_short!("rev")), pubkey);
     }
 
     pub fn oracle_count(env: Env) -> u32 {
@@ -121,7 +129,7 @@ impl MrvOracleContract {
         project_id: BytesN<32>,
     ) {
         read_admin(&env).require_auth();
-        
+
         let polygon = HabitatPolygon {
             polygon_id: polygon_id.clone(),
             geometry_ipfs_cid: geometry_cid,
@@ -139,7 +147,8 @@ impl MrvOracleContract {
         };
 
         write_polygon(&env, &polygon_id, &polygon);
-        env.events().publish((symbol_short!("mrvo"), symbol_short!("poly")), polygon_id);
+        env.events()
+            .publish((symbol_short!("mrvo"), symbol_short!("poly")), polygon_id);
     }
 
     pub fn close_polygon(env: Env, polygon_id: BytesN<32>) {
@@ -150,7 +159,8 @@ impl MrvOracleContract {
 
         polygon.active = false;
         write_polygon(&env, &polygon_id, &polygon);
-        env.events().publish((symbol_short!("mrvo"), symbol_short!("close")), polygon_id);
+        env.events()
+            .publish((symbol_short!("mrvo"), symbol_short!("close")), polygon_id);
     }
 
     pub fn get_polygon(env: Env, polygon_id: BytesN<32>) -> HabitatPolygon {
@@ -162,23 +172,22 @@ impl MrvOracleContract {
     pub fn pause(env: Env) {
         read_admin(&env).require_auth();
         write_paused(&env, true);
-        env.events().publish((symbol_short!("mrvo"), symbol_short!("pause")), ());
+        env.events()
+            .publish((symbol_short!("mrvo"), symbol_short!("pause")), ());
     }
 
     pub fn resume(env: Env) {
         read_admin(&env).require_auth();
         write_paused(&env, false);
-        env.events().publish((symbol_short!("mrvo"), symbol_short!("resume")), ());
+        env.events()
+            .publish((symbol_short!("mrvo"), symbol_short!("resume")), ());
     }
 
     pub fn paused(env: Env) -> bool {
         read_paused(&env)
     }
 
-    pub fn submit_survey(
-        env: Env,
-        data: SurveyData,
-    ) -> BytesN<32> {
+    pub fn submit_survey(env: Env, data: SurveyData) -> BytesN<32> {
         data.beneficiary.require_auth();
 
         if read_paused(&env) {
@@ -194,7 +203,7 @@ impl MrvOracleContract {
         }
 
         let (n, _d) = read_threshold(&env);
-        if (data.signatures.len() as u32) < n {
+        if data.signatures.len() < n {
             panic_with_error!(&env, MrvOracleError::ThresholdNotMet);
         }
 
@@ -204,7 +213,7 @@ impl MrvOracleContract {
         msg_bytes.append(&data.ipfs_cid);
         let ts_bytes = data.survey_timestamp.to_be_bytes();
         msg_bytes.append(&Bytes::from_slice(&env, &ts_bytes));
-        
+
         let survey_hash: BytesN<32> = env.crypto().sha256(&msg_bytes).into();
 
         if has_survey(&env, &survey_hash) {
@@ -227,7 +236,7 @@ impl MrvOracleContract {
             polygon_id: data.polygon_id.clone(),
             ipfs_cid: data.ipfs_cid.clone(),
             survey_timestamp: data.survey_timestamp,
-            oracle_count: data.signatures.len() as u32,
+            oracle_count: data.signatures.len(),
             threshold_met: true,
             disputed: false,
             resolved: false,
@@ -242,7 +251,10 @@ impl MrvOracleContract {
         polygon.last_survey_timestamp = Some(data.survey_timestamp);
         write_polygon(&env, &data.polygon_id, &polygon);
 
-        env.events().publish((symbol_short!("mrvo"), symbol_short!("surv")), survey_hash.clone());
+        env.events().publish(
+            (symbol_short!("mrvo"), symbol_short!("surv")),
+            survey_hash.clone(),
+        );
 
         // Calculate credit_qty = (current_bsi - baseline_bsi) * area_contribution
         let credit_qty = if data.current_bsi > data.baseline_bsi {
@@ -290,10 +302,16 @@ impl MrvOracleContract {
         survey.disputed = true;
         write_survey(&env, &survey_hash, &survey);
 
-        env.events().publish((symbol_short!("mrvo"), symbol_short!("disp")), survey_hash);
+        env.events()
+            .publish((symbol_short!("mrvo"), symbol_short!("disp")), survey_hash);
     }
 
-    pub fn resolve_dispute(env: Env, survey_hash: BytesN<32>, outcome: bool, slashed_oracles: Vec<BytesN<32>>) {
+    pub fn resolve_dispute(
+        env: Env,
+        survey_hash: BytesN<32>,
+        outcome: bool,
+        slashed_oracles: Vec<BytesN<32>>,
+    ) {
         read_admin(&env).require_auth();
 
         let mut survey = read_survey(&env, &survey_hash).unwrap_or_else(|| {
@@ -305,7 +323,7 @@ impl MrvOracleContract {
         }
 
         survey.resolved = true;
-        
+
         if outcome {
             for i in 0..slashed_oracles.len() {
                 let pubkey = slashed_oracles.get(i).unwrap();
@@ -318,6 +336,7 @@ impl MrvOracleContract {
         }
 
         write_survey(&env, &survey_hash, &survey);
-        env.events().publish((symbol_short!("mrvo"), symbol_short!("resd")), survey_hash);
+        env.events()
+            .publish((symbol_short!("mrvo"), symbol_short!("resd")), survey_hash);
     }
 }

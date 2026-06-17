@@ -2,25 +2,25 @@ use soroban_sdk::{contracttype, Address, Bytes, BytesN};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[contracttype]
-pub enum OrderSide { 
-    Buy = 0, 
-    Sell = 1 
+pub enum OrderSide {
+    Buy = 0,
+    Sell = 1,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[contracttype]
-pub enum OrderRestriction { 
-    None = 0, 
-    FillOrKill = 1, 
-    ImmediateOrCancel = 2 
+pub enum OrderRestriction {
+    None = 0,
+    FillOrKill = 1,
+    ImmediateOrCancel = 2,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[contracttype]
-pub enum OrderStatus { 
-    Open = 0, 
-    Filled = 1, 
-    Cancelled = 2 
+pub enum OrderStatus {
+    Open = 0,
+    Filled = 1,
+    Cancelled = 2,
 }
 
 #[derive(Clone, Debug)]
