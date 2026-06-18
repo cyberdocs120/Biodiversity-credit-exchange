@@ -1791,44 +1791,28 @@ A: Oracles earn $5 per validated survey attestation (distributed from protocol f
 
 ## 🤝 Contributing
 
-We welcome contributions from ecologists, blockchain developers, conservation finance experts, and community representatives.
+We welcome contributions from ecologists, blockchain developers, conservation finance experts, and community representatives!
 
-### Quick Start for Contributors
+Before contributing, please read our:
+- [Contributing Guidelines](./CONTRIBUTING.md)
+- [Code of Conduct](./CODE_OF_CONDUCT.md)
+- [Security Policy](./SECURITY.md)
+
+### Reporting Issues
+
+- **Bug reports**: Use our [Bug Report template](.github/ISSUE_TEMPLATE/bug_report.md).
+- **Feature requests**: Use our [Feature Request template](.github/ISSUE_TEMPLATE/feature_request.md).
+- **Security vulnerabilities**: Please see our [Security Policy](./SECURITY.md).
+
+### Quick Start for Developers
 
 ```bash
-# Fork and clone
-git clone https://github.com/your-org/biodiversity-credit-exchange
-cd biodiversity-credit-exchange
-
 # Build and test
 cargo build --release
 cargo test --all-features
 cargo clippy --all-targets -- -D warnings
 cargo fmt --check
 ```
-
-### How to Contribute
-
-1. **Fork** the repository
-2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
-3. **Commit your changes** (`git commit -m 'Add amazing feature'`)
-4. **Push** to the branch (`git push origin feature/amazing-feature`)
-5. **Open a Pull Request**
-
-### Code Standards
-
-- All smart contracts must be `#![no_std]`
-- Use `require_auth()` for all authorized functions
-- Use typed errors (derive `#[contracterror]`)
-- Emit events for all state changes
-- Every public function must have unit tests
-- Format with `cargo fmt` and lint with `cargo clippy`
-
-### Reporting Issues
-
-- **Bug reports**: Use the [Bug Report template](.github/ISSUE_TEMPLATE/bug_report.md)
-- **Feature requests**: Use the [Feature Request template](.github/ISSUE_TEMPLATE/feature_request.md)
-- **Security vulnerabilities**: Email **security@bdcx.dev** (do NOT open public issues)
 
 ---
 
