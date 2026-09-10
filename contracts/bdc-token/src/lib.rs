@@ -5,12 +5,12 @@ mod storage;
 mod test;
 pub mod types;
 
-use errors::BdcTokenError;
+use crate::errors::BdcTokenError;
+use crate::storage::*;
+use crate::types::*;
 use soroban_sdk::{
     contract, contractimpl, panic_with_error, symbol_short, Address, Bytes, BytesN, Env, Vec,
 };
-use storage::*;
-use types::*;
 
 #[contract]
 pub struct BdcTokenContract;

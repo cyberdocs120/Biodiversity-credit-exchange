@@ -5,6 +5,7 @@ edition.workspace = true
 
 [dependencies]
 soroban-sdk = { workspace = true, features = ["testutils"] }
+ed25519-dalek.workspace = true
 bdc-token = { path = "../../contracts/bdc-token" }
 mrv-oracle = { path = "../../contracts/mrv-oracle" }
 approval-gov = { path = "../../contracts/approval-gov" }
